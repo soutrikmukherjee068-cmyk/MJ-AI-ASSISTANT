@@ -70,6 +70,15 @@ from prompts_mj import (
 )
 
 # =========================
+# PROACTIVE ENGINE
+# =========================
+try:
+    from proactive_engine import ProactiveManager
+except ImportError as e:
+    ProactiveManager = None
+    print(f"⚠️ Proactive Engine not available: {e}")
+
+# =========================
 # TOOLS
 # =========================
 from Tools.manage_windows import manage_window, list_windows
@@ -150,6 +159,7 @@ class UltimateAdvancedNova(Agent):
         self._reminder_task: Optional[asyncio.Task] = None
         self._session: Optional[AgentSession] = None
         self._reminder_counter = 0
+        self._proactive_manager = None
 
         tools = [
             search_web,
@@ -245,7 +255,7 @@ class UltimateAdvancedNova(Agent):
         return RealtimeModel(
             model=os.getenv(
                 "LIVEKIT_GEMINI_MODEL",
-                "models/gemini-2.0-flash",
+                "gemini-2.5-flash-native-audio-preview-12-2025",
             ),
             voice=os.getenv("GEMINI_VOICE", "Kore"),
             temperature=float(os.getenv("GEMINI_TEMPERATURE", "0.9")),
@@ -270,6 +280,11 @@ class UltimateAdvancedNova(Agent):
     def set_session(self, session: AgentSession):
         self._session = session
         print("🔔 Session linked for reminders")
+        
+        # Start Proactive Engine
+        if ProactiveManager:
+            self._proactive_manager = ProactiveManager(session)
+            self._proactive_manager.start()
 
     def add_reminder(self, text: str, time_: datetime):
         rid = f"rem_{self._reminder_counter}"
